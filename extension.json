@@ -1,0 +1,8 @@
+{
+    "identifier": "kresdjan.GLSL",
+    "name": "GLSL",
+    "organization": "kresdjan",
+    "description": "GLSL – OpenGL® Shading Language definition for Nova.",
+    "version": "1.0",
+    "categories": ["languages"]
+}

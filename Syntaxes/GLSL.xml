@@ -1,0 +1,418 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<syntax name="glsl">
+    <meta>
+        <name>GLSL</name>
+        <type>structured</type>
+        <preferred-file-extension>glsl</preferred-file-extension>
+    </meta>
+    
+    <detectors>
+        <extension priority="1.0">glsl,frag,vert</extension>
+    </detectors>
+    
+    <indentation>
+        <increase>
+            <expression>^\s*&lt;(([^!/?]|%)(?!.+?([/%]&gt;|&lt;/.+?&gt;))|[%!]--\s*$)</expression>
+        </increase>
+        <decrease>
+            <expression>^\s*(&lt;/[^&gt;]+&gt;|--&gt;|--%&gt;)</expression>
+        </decrease>
+    </indentation>
+    
+    <comments>
+        <single>
+            <expression>//</expression>
+        </single>
+        <multiline>
+            <starts-with>
+                <expression>/*</expression>
+            </starts-with>
+            <ends-with>
+                <expression>*/</expression>
+            </ends-with>
+        </multiline>
+    </comments>
+    
+    <brackets>
+        <pair open="{" close="}" />
+        <pair open="[" close="]" />
+        <pair open="(" close=")" />
+    </brackets>
+    
+    <surrounding-pairs>
+        <pair open="&lt;" close="&gt;" />
+        <pair open="{" close="}" />
+        <pair open="[" close="]" />
+        <pair open="(" close=")" />
+        <pair open="&apos;" close="&apos;" />
+        <pair open="&quot;" close="&quot;" />
+        <pair open="`" close="`" />
+    </surrounding-pairs>
+    <scopes>
+        <include syntax="self" collection="comments" />
+        <include syntax="self" collection="function-blocks" />
+        <include syntax="self" collection="keywords" />
+        <include syntax="self" collection="syntax" />
+        <include syntax="self" collection="strings" />
+        <include syntax="self" collection="values" />
+        <include syntax="self" collection="variable" />
+        <include syntax="self" collection="include" />
+    </scopes>
+    <collections>
+        <!-- Include -->
+        <collection name="include">
+            <scope name="glsl.include">
+                <starts-with>
+                    <expression>(\#include)\s+([&lt;|"]*[A-Za-z0-9._]*[&gt;|"]*)</expression>
+                    <capture number="1" name="glsl.processing" />
+                    <capture number="2" name="glsl.identifier.package" />
+                </starts-with>
+                <ends-with>
+                    <expression>$</expression>
+                </ends-with>
+            </scope>
+        </collection>
+    
+        
+        <!-- Comments -->
+        <collection name="comments">
+            <scope name="glsl.comment.single.shebang">
+                <expression>^\#!(.*)$</expression>
+                <capture number="1" name="glsl.comment.content" />
+            </scope>
+            <scope name="glsl.comment.single" spell-check="true">
+                <expression>\/\/(.*)$</expression>
+                <capture number="1" name="glsl.comment.content" />
+            </scope>
+            <scope name="glsl.comment.block" spell-check="true">
+                <symbol type="comment">
+                    <context behavior="subtree" />
+                </symbol>
+                <starts-with>
+                    <expression>\/\*</expression>
+                </starts-with>
+                <ends-with>
+                    <expression>\*\/</expression>
+                </ends-with>
+            </scope>
+        </collection>
+        
+        <!-- Variable -->
+        <collection name="variable">
+            <scope name="glsl.definition.variable">
+                <symbol type="variable" scope="local" />
+                <starts-with>
+                    <expression>\b(bool|char|int|float|double|void|wchar_t)\s+([a-zA-Z_][A-Za-z0-9_]*)\b</expression>
+                    <capture number="1" name="glsl.keyword.let" />
+                    <capture number="2" name="glsl.identifier.name" />
+                </starts-with>
+                <ends-with>
+                    <expression>\=|;</expression>
+                </ends-with>
+                <subscopes>
+                    <cut-off>
+                        <expression>(?=\b(?:public|private|protected|function|class|if|else|while|for)\b)</expression>
+                    </cut-off>
+                    <scope name="glsl.constant.type">
+                        <starts-with>
+                            <expression>\:</expression>
+                            <capture number="0" name="glsl.operator" />
+                        </starts-with>
+                        <ends-with>
+                            <expression>(?=\=|\;)</expression>
+                        </ends-with>
+                        <subscopes>
+                            <cut-off>
+                                <expression>(?=\b(?:public|private|protected|function|class|if|else|while|for)\b)</expression>
+                            </cut-off>
+                            <include syntax="self" collection="comments" />
+                            <include syntax="self" collection="types" />
+                        </subscopes>
+                    </scope>
+                </subscopes>
+            </scope>
+        </collection>
+        
+        <!-- Strings -->
+        <collection name="strings">
+            <scope name="glsl.string.double-quoted">
+                <starts-with>
+                    <expression>&quot;</expression>
+                    <capture number="0" name="glsl.string.double-quoted.delimiter" />
+                </starts-with>
+                <ends-with>
+                    <expression>&quot;|(?:(?&lt;!\\)$)</expression>
+                    <capture number="0" name="glsl.string.double-quoted.delimiter" />
+                </ends-with>
+                <subscopes>
+                    <scope name="glsl.string.double-quoted.escape">
+                        <expression>\\(?:\\|&apos;|&quot;|n|r|t|b|f)</expression>
+                    </scope>
+                </subscopes>
+            </scope>
+            <scope name="glsl.string.single-quoted">
+                <starts-with>
+                    <expression>&apos;</expression>
+                    <capture number="0" name="glsl.string.single-quoted.delimiter" />
+                </starts-with>
+                <ends-with>
+                    <expression>&apos;|(?:(?&lt;!\\)$)</expression>
+                    <capture number="0" name="glsl.string.single-quoted.delimiter" />
+                </ends-with>
+                <subscopes>
+                    <scope name="glsl.string.single-quoted.escape">
+                        <expression>\\(?:\\|&apos;|&quot;|n|r|t|b|f)</expression>
+                    </scope>
+                </subscopes>
+            </scope>
+            <scope name="glsl.string.regex">
+                <expression>/(?!\s)(?:[^/\\]|\\.)*/</expression>
+            </scope>
+        </collection>
+        
+        <!-- Function Blocks -->
+        <collection name="function-blocks">
+            <scope name="glsl.block">
+                <symbol type="block">
+                    <context behavior="subtree" fold-type="function" />
+                </symbol>
+                <starts-with>
+                    <expression>\{</expression>
+                    <capture number="0" name="glsl.bracket" />
+                </starts-with>
+                <ends-with>
+                    <expression>\}</expression>
+                    <capture number="0" name="glsl.bracket" />
+                </ends-with>
+                <subscopes>
+                    <include syntax="self" />
+                </subscopes>
+            </scope>
+        </collection>
+        
+        <!--Keywords-->
+        <collection name="keywords">
+            <scope name="glsl.keyword">
+                <strings>
+                   <string>atomic_uint</string>
+                   <string>attribute</string>
+                   <string>bool</string>
+                   <string>break</string>
+                   <string>buffer</string>
+                   <string>bvec2</string>
+                   <string>bvec3</string>
+                   <string>bvec4</string>
+                   <string>case</string>
+                   <string>centroid</string>
+                   <string>coherent</string>
+                   <string>const</string>
+                   <string>continue</string>
+                   <string>default</string>
+                   <string>discard</string>
+                   <string>dmat2</string>
+                   <string>dmat2x2</string>
+                   <string>dmat2x3</string>
+                   <string>dmat2x4</string>
+                   <string>dmat3</string>
+                   <string>dmat3x2</string>
+                   <string>dmat3x3</string>
+                   <string>dmat3x4</string>
+                   <string>dmat4</string>
+                   <string>dmat4x2</string>
+                   <string>dmat4x3</string>
+                   <string>dmat4x4</string>
+                   <string>do</string>
+                   <string>double</string>
+                   <string>dvec2</string>
+                   <string>dvec3</string>
+                   <string>dvec4</string>
+                   <string>else</string>
+                   <string>false</string>
+                   <string>flat</string>
+                   <string>float</string>
+                   <string>for</string>
+                   <string>gl_FragColor</string>
+                   <string>gl_FragCoord</string>
+                   <string>highp</string>
+                   <string>if</string>
+                   <string>iimage1D</string>
+                   <string>iimage1DArray</string>
+                   <string>iimage2D</string>
+                   <string>iimage2DArray</string>
+                   <string>iimage2DMS</string>
+                   <string>iimage2DMSArray</string>
+                   <string>iimage2DRect</string>
+                   <string>iimage3D</string>
+                   <string>iimageBuffer</string>
+                   <string>iimageCube</string>
+                   <string>iimageCubeArray</string>
+                   <string>image1D</string>
+                   <string>image1DArray</string>
+                   <string>image2D</string>
+                   <string>image2DArray</string>
+                   <string>image2DMS</string>
+                   <string>image2DMSArray</string>
+                   <string>image2DRect</string>
+                   <string>image3D</string>
+                   <string>imageBuffer</string>
+                   <string>imageCube</string>
+                   <string>imageCubeArray</string>
+                   <string>in</string>
+                   <string>inout</string>
+                   <string>int</string>
+                   <string>invariant</string>
+                   <string>isampler1D</string>
+                   <string>isampler1DArray</string>
+                   <string>isampler2D</string>
+                   <string>isampler2DArray</string>
+                   <string>isampler2DMS</string>
+                   <string>isampler2DMSArray</string>
+                   <string>isampler2DRect</string>
+                   <string>isampler3D</string>
+                   <string>isamplerBuffer</string>
+                   <string>isamplerCube</string>
+                   <string>isamplerCubeArray</string>
+                   <string>ivec2</string>
+                   <string>ivec3</string>
+                   <string>ivec4</string>
+                   <string>layout</string>
+                   <string>lowp</string>
+                   <string>mat2</string>
+                   <string>mat2x2</string>
+                   <string>mat2x3</string>
+                   <string>mat2x4</string>
+                   <string>mat3</string>
+                   <string>mat3x2</string>
+                   <string>mat3x3</string>
+                   <string>mat3x4</string>
+                   <string>mat4</string>
+                   <string>mat4x2</string>
+                   <string>mat4x3</string>
+                   <string>mat4x4</string>
+                   <string>mediump</string>
+                   <string>noperspective</string>
+                   <string>out</string>
+                   <string>patch</string>
+                   <string>precise</string>
+                   <string>precision</string>
+                   <string>readonly</string>
+                   <string>restrict</string>
+                   <string>return</string>
+                   <string>sample</string>
+                   <string>sampler1D</string>
+                   <string>sampler1DArray</string>
+                   <string>sampler1DArrayShadow</string>
+                   <string>sampler1DShadow</string>
+                   <string>sampler2D</string>
+                   <string>sampler2DArray</string>
+                   <string>sampler2DArrayShadow</string>
+                   <string>sampler2DMS</string>
+                   <string>sampler2DMSArray</string>
+                   <string>sampler2DRect</string>
+                   <string>sampler2DRectShadow</string>
+                   <string>sampler2DShadow</string>
+                   <string>sampler3D</string>
+                   <string>samplerBuffer</string>
+                   <string>samplerCube</string>
+                   <string>samplerCubeArray</string>
+                   <string>samplerCubeArrayShadow</string>
+                   <string>samplerCubeShadow</string>
+                   <string>shared</string>
+                   <string>smooth</string>
+                   <string>struct</string>
+                   <string>subroutine</string>
+                   <string>switch</string>
+                   <string>true</string>
+                   <string>uimage1D</string>
+                   <string>uimage1DArray</string>
+                   <string>uimage2D</string>
+                   <string>uimage2DArray</string>
+                   <string>uimage2DMS</string>
+                   <string>uimage2DMSArray</string>
+                   <string>uimage2DRect</string>
+                   <string>uimage3D</string>
+                   <string>uimageBuffer</string>
+                   <string>uimageCube</string>
+                   <string>uimageCubeArray</string>
+                   <string>uint</string>
+                   <string>uniform</string>
+                   <string>usampler1D</string>
+                   <string>usampler1DArray</string>
+                   <string>usampler2D</string>
+                   <string>usampler2DArray</string>
+                   <string>usampler2DMS</string>
+                   <string>usampler2DMSArray</string>
+                   <string>usampler2DRect</string>
+                   <string>usampler3D</string>
+                   <string>usamplerBuffer</string>
+                   <string>usamplerCube</string>
+                   <string>usamplerCubeArray</string>
+                   <string>uvec2</string>
+                   <string>uvec3</string>
+                   <string>uvec4</string>
+                   <string>varying</string>
+                   <string>vec2</string>
+                   <string>vec3</string>
+                   <string>vec4</string>
+                   <string>void</string>
+                   <string>volatile</string>
+                   <string>while</string>
+                   <string>writeonly</string>
+                </strings>
+            </scope>
+        </collection>
+        
+        <!-- Values -->
+        <collection name="values">
+            <include syntax="self" collection="strings" />
+            <scope name="glsl.value.null">
+                <strings>
+                    <string>null</string>
+                    <string>undefined</string>
+                    <string>NaN</string>
+                    <string>Infinity</string>
+                </strings>
+            </scope>
+            <scope name="glsl.value.boolean">
+                <strings>
+                    <string>true</string>
+                    <string>false</string>
+                </strings>
+            </scope>
+            <scope name="glsl.value.number.hex">
+                <expression>\b0x[a-fA-F0-9]+\b</expression>
+            </scope>
+            <scope name="glsl.value.number">
+                <expression>\b\-?(?:\d+(?:\.\d*)?|(?:\.\d+))\b</expression>
+            </scope>
+        </collection>
+        
+        <!-- Syntax -->
+        <collection name="syntax">
+            <scope name="glsl.bracket.block.start">
+                <symbol type="block">
+                    <context behavior="start" />
+                </symbol>
+                <expression>\{</expression>
+            </scope>
+            <scope name="glsl.bracket.block.end">
+                <symbol type="block">
+                    <context behavior="end" />
+                </symbol>
+                <expression>\}</expression>
+            </scope>
+            <scope name="glsl.bracket">
+                <expression>[\(\[\)\]]</expression>
+            </scope>
+            <scope name="glsl.operator">
+                <expression>(\+|\-|\*|/|%|\+\+|\-\-|\=|\=\=|!\=|\+\=|\-\=|\*\=|/\=|%\=|\&lt;|\&gt;|\&lt;\=|\&gt;=|\=\=\=|!\=\=|&amp;&amp;|\||\|\||!|\^|&amp;|\&lt;\&lt;|\&gt;\&gt;|~)</expression>
+            </scope>
+            <scope name="glsl.comma">
+                <expression>,</expression>
+            </scope>
+            <scope name="glsl.semicolon">
+                <expression>;</expression>
+            </scope>
+        </collection>
+    </collections>    
+</syntax>
